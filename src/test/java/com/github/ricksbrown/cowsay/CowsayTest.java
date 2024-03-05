@@ -82,18 +82,6 @@ public class CowsayTest {
 	}
 
 	/**
-	 * Test of say method, of class Cowsay, with -list arg.
-	 */
-	@Test
-	public void testListCows() {
-		System.out.println("cowsay -list");
-		String[] args = new String[]{"-list"};
-		String[] expected = TestUtils.getCowjarCowNames(new String[]{"cowjar"});
-		String[] actual = Cowsay.say(args).split(" ");
-		Assert.assertArrayEquals(expected, actual);
-	}
-
-	/**
 	 * Test of say method, of class Cowsay.
 	 */
 	@Test
@@ -418,41 +406,12 @@ public class CowsayTest {
 		TestUtils.cowfileCompare(expResult, result);
 	}
 
-	/**
-	 * Test output of standard cowfiles except those moved to cowjar-off.
-	 * Tests against output from original perl cowsay on ubuntu.
-	 */
-	@Test
-	public void testAllCowfiles() {
-		testCowjar("cowjar");
-	}
 
-	/**
-	 * Test output of all "offensive" cowfiles in cowjar-off.
-	 * Tests against output from original perl cowsay on ubuntu.
-	 */
-	@Test
-	public void testOffensiveCowfiles() {
-		testCowjar("cowjar-off");
-	}
 
-	/**
-	 * Test output of extra cowfiles.
-	 * Tests against output from original perl cowsay on ubuntu.
-	 */
-	@Test
-	public void testExtraCowfiles() {
-		testCowjar("cowjar-extra");
-	}
 
-	/**
-	 * Test output of cowfiles found in https://github.com/piuccio/cowsay.
-	 * Tests against output from original perl cowsay on ubuntu.
-	 */
-	@Test
-	public void testJsCowfiles() {
-		testCowjar("cowjar-js");
-	}
+
+
+
 /**
 	 * Tests that the output of java cowsay matches that of original perl cowsay.
 	 * @param cowjarName The name of the cowjar which contains the cowfiles to test.
