@@ -10,3 +10,6 @@ nbactions.xml
 /nb-configuration.xml
 /nbactions-release-profile.xml
 
+
+/jeka-output
+/.jeka-work
