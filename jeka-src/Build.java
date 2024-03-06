@@ -22,6 +22,9 @@ class Build extends KBean {
 
     final JkProject project = load(ProjectKBean.class).project;
 
+    @JkDoc("Creates a native image when packing")
+    public boolean nativeImg;
+
     /*
      * Configures KBean project
      * When this method is called, option fields have already been injected from command line.
@@ -29,6 +32,7 @@ class Build extends KBean {
     @Override
     protected void init() {
         project.compilation.postCompileActions.append("import-cow-files", this::copyCowFiles);
+        project.packActions.appendIf(nativeImg, "Creates native image", this::nativeImg);
     }
 
     public void copyCowFiles() {
@@ -50,9 +54,10 @@ class Build extends KBean {
                 .addParams("-jar", jar.toString())
                 .addParams("-H:Name=" + target)
                 .setLogCommand(true)
-                .setInheritIO(true)
+                .setLogWithJekaDecorator(true)
                 .exec();
         JkLog.info("Generated in %s", target);
+        JkLog.info("Run: %s -f dragon Hello Jeka", relTarget);
     }
 
 }
