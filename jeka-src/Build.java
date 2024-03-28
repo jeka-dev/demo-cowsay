@@ -18,8 +18,6 @@ import java.nio.file.StandardCopyOption;
 
 class Build extends KBean {
 
-    public static final String COW_ZIP_URL = "https://github.com/ricksbrown/cowsay-perl/archive/master.zip";
-
     final JkProject project = load(ProjectKBean.class).project;
 
     @JkDoc("Creates a native image when packing")
@@ -31,16 +29,14 @@ class Build extends KBean {
      */
     @Override
     protected void init() {
-        project.compilation.postCompileActions.append("import-cow-files", this::copyCowFiles);
-        project.packActions.appendIf(nativeImg, "Creates native image", this::nativeImg);
+        project.packActions.appendIf(nativeImg, "Native image", this::nativeImg);;
     }
 
-    public void copyCowFiles() {
-        Path target = project.compilation.layout.resolveClassDir().resolve("cows");
-        JkUtilsZip.unzipUrl(COW_ZIP_URL, "/cowsay-perl-master/cows", target);
-    }
 
-    @JkDoc("Build a native Image")
+    /*
+     * Experimental use of native
+     */
+    @JkDoc("Build a native image")
     public void nativeImg() {
         Path javaHome = JkJavaProcess.CURRENT_JAVA_HOME;
         Path jar = project.artifactLocator.getMainArtifactPath();

@@ -7,11 +7,9 @@
 ==== COMPILE ====
 org.apache.commons:commons-lang3:3.3.2
 commons-cli:commons-cli:1.4
-org.apache.maven:maven-plugin-api:3.6.1
-org.apache.ant:ant:1.10.11
 
 ==== RUNTIME ====
-- org.apache.ant:ant
+
 
 ==== TEST ====
 org.junit.vintage:junit-vintage-engine:5.7.0
