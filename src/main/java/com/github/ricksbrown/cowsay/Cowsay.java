@@ -89,6 +89,10 @@ public final class Cowsay {
 					moosages = CowsayCli.getPipedInput();
 				}
 				String moosage = StringUtils.join(moosages, " ");
+				String prefix = System.getProperty("cowsay.prefix");
+				if (prefix != null) {
+					moosage = prefix + moosage;
+				}
 				if (moosage != null && moosage.length() > 0) {
 					moosage = normalizeSpace(moosage);
 					Message message = new Message(moosage, isThought);
