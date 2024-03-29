@@ -7,6 +7,7 @@ import dev.jeka.core.api.system.JkLog;
 import dev.jeka.core.api.system.JkProcess;
 import dev.jeka.core.api.utils.JkUtilsPath;
 import dev.jeka.core.api.utils.JkUtilsString;
+import dev.jeka.core.api.utils.JkUtilsSystem;
 import dev.jeka.core.api.utils.JkUtilsZip;
 import dev.jeka.core.tool.JkDoc;
 import dev.jeka.core.tool.KBean;
@@ -42,7 +43,9 @@ class Build extends KBean {
         Path jar = project.artifactLocator.getMainArtifactPath();
         String relTarget = JkUtilsString.substringBeforeLast(jar.toString(), ".jar");
         Path target = Paths.get(relTarget).toAbsolutePath();
-        Path nativeImageExe = javaHome.resolve("bin/native-image");
+        Path nativeImageExe = JkUtilsSystem.IS_WINDOWS ?
+                javaHome.resolve("bin/native-image.cmd") :
+                javaHome.resolve("bin/native-image");
         JkProcess.of(nativeImageExe.toString(), "--no-fallback")
                 .addParams("-H:+UnlockExperimentalVMOptions")
                 .addParams("-H:IncludeResources=cows/.*$")
