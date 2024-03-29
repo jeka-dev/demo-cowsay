@@ -854,7 +854,9 @@ execute_program_if_requested() {
     build_cmd="project: pack -Djeka.skip.tests=true"
   fi
   debug "Launch build with command : $build_cmd"
-  local -a build_args=($build_cmd)   # $build_cmd not quoted on purpose
+
+  # shellcheck disable=SC2206
+  local -a build_args=($build_cmd)
   "$JAVA_CMD" "${JEKA_OPTS[@]}" "-Djeka.current.basedir=$BASE_DIR" -cp "$JEKA_CLASSPATH" "dev.jeka.core.tool.Main" "${heading_args[@]}" "${build_args[@]}"
   RETRY_AFTER_BUILD="true"
   execute_program_if_requested
@@ -934,8 +936,54 @@ execute_and_exit_java_if_present() {
     return 0
   fi
   compute_JAVA_CMD
-  exec "$JAVA_CMD" -jar "$jar_file" "$@"
+  local -a sysProp_params
+  filter_in_sysProp "$@"
+  sysProp_params=("${returned[@]}")
+  local -a regular_params
+  filter_out_sysProp "$@"
+  regular_params=("${returned[@]}")
+  exec "$JAVA_CMD" "${sysProp_params[@]}" -jar "$jar_file" "${regular_params[@]}"
   exit $?
+}
+
+######################################
+# Filter array keeping only items that match '-Dxxx=yyy' (sys prop)
+#
+# Global Vars:
+#   returned     (write)
+# Arguments:
+#   $@ : arrays to filter
+# Outputs:
+#   The filtered array is written to in the 'returned' global var
+#######################################
+filter_in_sysProp() {
+  local arr=("$@")
+    returned=()
+    for i in "${arr[@]}"; do
+      if [[ $i == -D* ]] && [[ $i == *"="* ]]; then
+        returned+=("$i")
+      fi
+    done
+}
+
+######################################
+# Filter array removing items that match '-Dxxx=yyy' (sys prop)
+#
+# Global Vars:
+#   returned     (write)
+# Arguments:
+#   $@ : arrays to filter
+# Outputs:
+#   The filtered array is written to in the 'returned' global var
+#######################################
+filter_out_sysProp() {
+  local arr=("$@")
+    returned=()
+    for i in "${arr[@]}"; do
+      if [[ $i != -D* ]] || [[ $i != *"="* ]]; then
+        returned+=("$i")
+      fi
+    done
 }
 
 ##############################################################

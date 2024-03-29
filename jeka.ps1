@@ -1,9 +1,22 @@
-function Write-Message {
+function MessageInfo {
+  param([string]$msg)
+  [Console]::Error.WriteLine($msg)
+}
+
+function MessageVerbose {
   param([string]$msg)
 
-  if ($global:Verbose) {
-    Write-Host $msg
+  if ($VerbosePreference -eq "Continue") {
+    [Console]::Error.WriteLine($msg)
   }
+
+}
+
+function Exit-Error {
+  param([string]$msg)
+
+  Write-Host $msg -ForegroundColor Red
+  exit 1
 }
 
 function Get-JekaUserHome {
@@ -27,7 +40,7 @@ function Get-CacheDir([string]$jekaUserHome) {
 class BaseDirResolver {
   [string]$url
   [string]$cacheDir
-  [string]$updateFlag
+  [bool]$updateFlag
 
   BaseDirResolver([string]$url, [string]$cacheDir, [bool]$updateFlag) {
     $this.url = $url
@@ -39,7 +52,7 @@ class BaseDirResolver {
     if ($this.url -eq '') {
       return $PWD.Path
     }
-    if (! $this.IsGitRemote()) {
+    if ($this.IsGitRemote() -eq $false) {
       return $this.url
     }
     $path = $this.cacheDir + "\git\" + $this.FolderName()
@@ -60,13 +73,15 @@ class BaseDirResolver {
       $branchArgs = "--branch " + $branchArgs
     }
     $repoUrl = $this.SubstringBeforeHash()
+    MessageInfo "Git clone $repoUrl"
     $gitCmd = "git clone --quiet -c advice.detachedHead=false --depth 1 $branchArgs $repoUrl $path"
     Invoke-Expression -Command $gitCmd
   }
 
   hidden [bool] IsGitRemote() {
-    $gitUrlRegex = '(https?://.+.git*)|^(ssh://.+.git*)|^(git://.+.git*)|^(git@[^:]+:.+.git*)$'
-    if ($this.url -match $gitUrlRegex) {
+    $gitUrlRegex = '(https?://*)|^(ssh://*)|^(git://*)|^(git@[^:]+:*)$'
+    $myUrl = $this.url
+    if ($myUrl -match $gitUrlRegex) {
       return $true;
     } else {
       return $false;
@@ -104,6 +119,9 @@ class CmdLineArgs {
   [string] GetSystemProperty([string]$propName) {
     $prefix = "-D$propName="
     foreach ($arg in $this.args) {
+      if ($arg -eq $null) {
+        continue
+      }
       if ( $arg.StartsWith($prefix) ) {
         return $arg.Replace($prefix, "")
       }
@@ -130,6 +148,16 @@ class CmdLineArgs {
     return $this.args[$remoteIndex + 1]
   }
 
+  [array] GetProgramArgs() {
+    $index = $this.GetProgramArgIndex() + 1
+    return $this.args[$index..$this.args.Length]
+  }
+
+  [array] GetPriorProgramArgs() {
+    $index = $this.GetProgramArgIndex() - 1
+    return $this.args[0..$index]
+  }
+
   [bool] IsUpdateFlagPresent() {
     $remoteArgs= @("-ru", "-ur", "-u", "--remote-update")
     $remoteIndex= $this.GetIndexOfFirstOf($remoteArgs)
@@ -143,9 +171,33 @@ class CmdLineArgs {
   }
 
   [bool] IsProgramFlagPresent() {
-    $remoteArgs= @("-p", "--program")
-    $remoteIndex= Get-indexOfFirst($this.args,$remoteArgs)
+    $remoteIndex= $this.GetProgramArgIndex()
     return ($remoteIndex -ne -1)
+  }
+
+  [array] FilterOutSysProp() {
+    $result = @()
+    foreach ($item in $this.args) {
+      if (!($item.StartsWith("-D") -AND ($item.Contains("="))) ) {
+        $result += $item
+      }
+    }
+    return $result
+  }
+
+  [array] FilterInSysProp() {
+    $result = @()
+    foreach ($item in $this.args) {
+      if ($item.StartsWith("-D") -AND ($item.Contains("=")) ) {
+        $result += $item
+      }
+    }
+    return $result
+  }
+
+  hidden [Int16] GetProgramArgIndex() {
+    $remoteArgs= @("-p", "--program")
+    return $this.GetIndexOfFirstOf($remoteArgs)
   }
 
 }
@@ -167,19 +219,20 @@ class Props {
       return $cmdArgsValue
     }
     $envValue = [Environment]::GetEnvironmentVariable($propName)
-    if ($null -ne $envValue) {
+    if ($envValue) {
       return $envValue
     }
+
     $jekaPropertyFilePath = $this.baseDir + '\jeka.properties'
 
     $value = [Props]::GetValueFromFile($jekaPropertyFilePath, $propName)
-    if ($null -eq $value) {
+    if ('' -eq $value) {
       $parentDir = $this.baseDir + '\..'
       $parentJekaPropsFile = $parentDir + '\jeka.properties'
       if (Test-Path $parentJekaPropsFile) {
         $value = $this.GetValueFromFile($parentJekaPropsFile, $propName)
       } else {
-        $value = $this.GetValueFromFile($this.globalPropFile, $propName)
+        $value = [Props]::GetValueFromFile($this.globalPropFile, $propName)
       }
     }
     return $value
@@ -187,7 +240,6 @@ class Props {
 
   [string] GetValueOrDefault([string]$propName, [string]$defaultValue) {
     $value = $this.GetValue($propName)
-    $isNull = ($value -eq '')
     if ($value -eq '') {
       return $defaultValue
     } else {
@@ -201,7 +253,7 @@ class Props {
       if ($arg -like "::*") {
         $propKey= ( "jeka.cmd." + $arg.Substring(2) )
         $propValue= $this.GetValue($propKey)
-        if ($null -ne $propValue) {
+        if ('' -ne $propValue) {
           $valueArray= [Props]::ParseCommandLine($propValue)
           $result += $valueArray
         } else {
@@ -214,7 +266,7 @@ class Props {
     return [CmdLineArgs]::new($result)
   }
 
-  static [string] ParseCommandLine([string]$cmdLine) {
+  static [array] ParseCommandLine([string]$cmdLine) {
     $pattern = '(""[^""]*""|[^ ]*)'
     $regex = New-Object Text.RegularExpressions.Regex $pattern
     return $regex.Matches($cmdLine) | ForEach-Object { $_.Value.Trim('"') } | Where-Object { $_ -ne "" }
@@ -252,7 +304,7 @@ class Jdks {
   }
 
   hidden Install([string]$distrib, [string]$version, [string]$targetDir) {
-    Write-Message "Downloading JDK $distrib $version. It may take a while..."
+    MessageInfo "Downloading JDK $distrib $version. It may take a while..."
     $jdkurl="https://api.foojay.io/disco/v3.0/directuris?distro=$distrib&javafx_bundled=false&libc_type=c_std_lib&archive_type=zip&operating_system=windows&package_type=jdk&version=$version&architecture=x64&latest=available"
     $zipExtractor = [ZipExtractor]::new($jdkurl, $targetDir)
     $zipExtractor.ExtractRootContent()
@@ -303,10 +355,10 @@ class JekaDistrib {
       $dir = $PSScriptRoot
       $jarFile = $dir + "\dev.jeka.jeka-core.jar"
       if (! [System.IO.File]::Exists($jarFile)) {
-        Write-Host "No Jeka jar file found at $jarFile"
-        Write-Host "This is due that neither jeka.distrib.location nor jeka.version are specified in properties, "
-        Write-Host "and you are probably invoking local 'jeka.ps1'"
-        Write-Host "Specify one the mentionned above properties or invoke 'jeka' if JeKa is installed on host machine."
+        Write-Host "No Jeka jar file found at $jarFile" -ForegroundColor Red
+        Write-Host "This is due that neither jeka.distrib.location nor jeka.version are specified in properties, " -ForegroundColor Red
+        Write-Host "and you are probably invoking local 'jeka.ps1'" -ForegroundColor Red
+        Write-Host "Specify one the mentionned above properties or invoke 'jeka' if JeKa is installed on host machine." -ForegroundColor Red
         exit 1
       }
       return $dir
@@ -366,11 +418,91 @@ class ZipExtractor {
   }
 }
 
-function Main {
+class ProgramExecutor {
+  [string]$folder
+  [array]$cmdLineArgs
+
+  ProgramExecutor([string]$folder, [string]$cmdLineArgs) {
+    $this.folder = $folder
+    $this.cmdLineArgs = $cmdLineArgs
+    $h = $this.folder
+  }
+
+  Exec([string]$javaCmd, [string]$progFile) {
+    if ($progFile.EndsWith('.exe')) {
+      & "$progFile" $this.cmdLineArgs
+    } else {
+      & "$javaCmd" -jar "$progFile" $this.cmdLineArgs
+    }
+  }
+
+  [string] FindProg() {
+    $dir = $this.folder
+    $exist = [System.IO.Directory]::Exists("$dir")
+    if (-not (Test-Path $dir)) {
+      return $null
+    }
+    $exeFile = $this.findFile(".exe")
+    if ($exeFile -ne '') {
+      return $exeFile
+    }
+    return $this.findFile(".jar")
+  }
+
+  hidden [string] findFile([string]$extension) {
+    $files = Get-ChildItem -Path $this.folder -Filter "*$extension"
+    if ($files) {
+      $firstFile = $files | Select-Object -First 1
+      return $firstFile.FullName
+    }
+    return $null
+  }
+}
+
+function ExecJekaEngine {
   param(
-    [array]$arguments
+    [string]$baseDir,
+    [string]$cacheDir,
+    [Props]$props,
+    [string]$javaCmd,
+    [array]$cmdLineArgs
   )
 
+  $jekaDistrib = [JekaDistrib]::new($props, $cacheDir)
+  $jekaJar = $jekaDistrib.GetJar()
+  $classpath = "$baseDir\jeka-boot\*;$jekaJar"
+  $jekaOpts = $Env:JEKA_OPTS
+  $baseDirProp = "-Djeka.current.basedir=$baseDir"
+  & "$javaCmd" $jekaOpts "$baseDirProp" -cp "$classpath" "dev.jeka.core.tool.Main" $cmdLineArgs
+}
+
+function ExecProg {
+  param(
+    [string]$javaCmd,
+    [string]$progFile,
+    [array]$cmdLineArgs
+  )
+
+  $argLine = $cmdLineArgs -join ' '
+  if ($progFile.EndsWith('.exe')) {
+    Write-Verbose "Run native program $progFile with args $argLine"
+    & "$progFile" "$cmdLineArgs"
+  } else {
+    $cmdLineArgs = [CmdLineArgs]::new($cmdLineArgs)
+    $sypPropArgs = $cmdLineArgs.FilterInSysProp()
+    $sanitizedProgArgs = $cmdLineArgs.FilterOutSysProp()
+    Write-Verbose "Run Java program $progFile with args $argLine"
+    & "$javaCmd" -jar "$sypPropArgs" "$progFile" "$sanitizedProgArgs"
+  }
+}
+
+function Main {
+  param(
+    [array]$arguments,
+    [bool]$allowReenter
+  )
+
+  $argLine = $arguments -join ' '
   $jekaUserHome = Get-JekaUserHome
   $cacheDir = Get-CacheDir($jekaUserHome)
   $globalPropFile = $jekaUserHome + "\global.properties"
@@ -387,24 +519,59 @@ function Main {
   $baseDir = $baseDirResolver.GetPath()
   $props = [Props]::new($cmdLineArgs, $baseDir, $globalPropFile)
   $cmdLineArgs = $props.InterpolatedCmdLine()
-  $global:Verbose = $cmdLineArgs.IsVerboseFlagPresent()
+  $joinedArgs = $cmdLineArgs.args -join " "
+  if ($cmdLineArgs.IsVerboseFlagPresent()) {
+    $VerbosePreference = 'Continue'
+  }
+  MessageVerbose "Interpolated cmd line : $joinedArgs"
 
   # Compute Java command
   $jdks = [Jdks]::new($props, $cacheDir)
   $javaCmd = $jdks.GetJavaCmd()
 
-  if ($cmdLineArgs.IsUpdateFlagPresent()) {
-    # Try to Execute program without passing by Jeka
+  # -p option present : try to execute program directly, bypassing jeka engine
+  if ($cmdLineArgs.IsProgramFlagPresent()) {
+    $progArgs = $cmdLineArgs.GetProgramArgs()  # arguments metionned after '-p'
+    $progDir = $baseDir + "\jeka-output"
+    $prog = [ProgramExecutor]::new($progDir, $progArgs)
+    $progFile = $prog.FindProg()
+    if ($progFile -ne '') {
+      ExecProg -javaCmd $javaCmd -progFile $progFile -cmdLineArgs $progArgs
+      exit $LASTEXITCODE
+    }
+
+    # No executable or Jar found : launch a build
+    $buildCmd = $props.GetValue("jeka.program.build")
+    if ($buildCmd -eq '') {
+      $srcDir = $baseDir + "\src"
+      if ([System.IO.Directory]::Exists($srcDir)) {
+        $buildCmd = "project: pack -Djeka.skip.tests=true"
+      } else {
+        $buildCmd = "base: pack -Djeka.skip.tests=true"
+      }
+    }
+    $buildArgs = [Props]::ParseCommandLine($buildCmd)
+    $leadingArgs = $cmdLineArgs.GetPriorProgramArgs()
+    $effectiveArgs = $leadingArgs + $buildArgs
+    MessageInfo "Building with command : $effectiveArgs"
+    ExecJekaEngine -baseDir $baseDir -cacheDir $cacheDir -props $props -javaCmd $javaCmd -cmdLineArgs $effectiveArgs
+    if ($LASTEXITCODE -ne 0) {
+      Exit-Error "Build exited with error code $LASTEXITCODE. Cannot execute program"
+    }
+    $progFile = $prog.FindProg()
+    if ($progFile -eq '') {
+      Exit-Error "No program found to be executed in $progDir"
+    }
+    ExecProg -javaCmd $javaCmd -progFile $progFile -cmdLineArgs $progArgs
+    exit $LASTEXITCODE
+
+  # Execute Jeke engine
   } else {
-    $jekaDistrib = [JekaDistrib]::new($props, $cacheDir)
-    $jekaJar = $jekaDistrib.GetJar()
-    $classpath = "$baseDir\jeka-boot\*;$jekaJar"
-    $jekaOpts = $Env:JEKA_OPTS
-    $baseDirProp = "-Djeka.current.basedir=$baseDir"
-    & "$javaCmd" "$jekaOpts" $baseDirProp -cp $classpath "dev.jeka.core.tool.Main" $arguments
+    ExecJekaEngine -javaCmd $javaCmd -baseDir $baseDir -cacheDir $cacheDir -props $props -cmdLineArgs $cmdLineArgs.args
+    exit $LASTEXITCODE
   }
 
 }
 
 $ErrorActionPreference = "Stop"
-Main -arguments $args
+Main -arguments $args -allowReenter $true
