@@ -43,7 +43,7 @@ class Build extends KBean {
         Path javaHome = JkJavaProcess.CURRENT_JAVA_HOME;
         Path jar = project.artifactLocator.getMainArtifactPath();
         if (!Files.exists(jar)) {
-            project.packaging.createFatJar();
+            project.packaging.createFatJar(jar);
         }
         String relTarget = JkUtilsString.substringBeforeLast(jar.toString(), ".jar");
         Path target = Paths.get(relTarget).toAbsolutePath();
