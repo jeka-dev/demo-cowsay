@@ -13,6 +13,7 @@ import dev.jeka.core.tool.JkDoc;
 import dev.jeka.core.tool.KBean;
 import dev.jeka.core.tool.builtins.project.ProjectKBean;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -41,6 +42,9 @@ class Build extends KBean {
     public void nativeImg() {
         Path javaHome = JkJavaProcess.CURRENT_JAVA_HOME;
         Path jar = project.artifactLocator.getMainArtifactPath();
+        if (!Files.exists(jar)) {
+            project.packaging.createFatJar();
+        }
         String relTarget = JkUtilsString.substringBeforeLast(jar.toString(), ".jar");
         Path target = Paths.get(relTarget).toAbsolutePath();
         Path nativeImageExe = JkUtilsSystem.IS_WINDOWS ?
