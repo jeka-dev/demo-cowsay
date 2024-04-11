@@ -71,6 +71,8 @@ The native image will be run directly in few milliseconds.
 
 ## Use shorthand defined in jeka.properties
 
+We can use predefined program args using interpolation defined in [jeka.properties file](jeka.properties)
+
 ```shell
 jeka -r https://github.com/jeka-dev/demo-cowsay -p ::hi
 ```
