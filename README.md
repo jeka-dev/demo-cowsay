@@ -21,14 +21,14 @@ Don't need to clone the repo by your own. Just execute from a terminal :
 jeka -r https://github.com/jeka-dev/demo-cowsay -p Hello JeKa
 ```
 
-Form scratch, this will:
-  - clone the repo
-  - download proper JDK (If needed)
-  - download proper JeKa version (If needed)
-  - Build the fat Jar silently (cause of -q option)
-  - Execute the build Jar with the specified program args
+Behind the scene, this :
+  - Clones the repo
+  - Downloads proper JDK (If needed)
+  - Downloads proper JeKa version (If needed)
+  - Builds the fat Jar silently (cause of -q option)
+  - Executes the build Jar with the specified program arguments (next the '-p' option).
 
-On the subsequent runs, this will run faster as it will execute the Jar file directly.
+On the subsequent runs, this will run faster as only the last step will be executed.
 
 ```
  ____________
@@ -64,7 +64,7 @@ jeka -r https://github.com/jeka-dev/demo-cowsay nativeImg
 
 Now, run again :
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay -p -f dragon Hello Java-Native
+jeka -r https://github.com/jeka-dev/demo-cowsay -p -f dragon Hello Mates
 ```
 The native image will be run directly in few milliseconds.
 
