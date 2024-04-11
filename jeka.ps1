@@ -1,12 +1,40 @@
+#Requires -Version 5
+
+#
+# Copyright 2014-2024  the original author or authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#       https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+#
+# Author : Jérôme Angibaud
+#
+# Execute JeKa by Downloading requiered potentialy missing dependencies (JDK, JeKa version)
+# The passed arguments are interpolated then passed to JeKA engine.
+#
+
 function MessageInfo {
   param([string]$msg)
-  [Console]::Error.WriteLine($msg)
+  if ($global:QuietFlag -ne $true) {
+    [Console]::Error.WriteLine($msg)
+  }
+
 }
 
 function MessageVerbose {
   param([string]$msg)
 
-  if ($VerbosePreference -eq "Continue") {
+  if (($VerbosePreference -eq "Continue") -and ($global:QuietFlag -ne $true)) {
     [Console]::Error.WriteLine($msg)
   }
 
@@ -164,6 +192,12 @@ class CmdLineArgs {
     return ($remoteIndex -ne -1)
   }
 
+  [bool] IsQuietFlagPresent() {
+    $remoteArgs= @("-q", "--quiet")
+    $remoteIndex= $this.GetIndexOfFirstOf($remoteArgs)
+    return ($remoteIndex -ne -1)
+  }
+
   [bool] IsVerboseFlagPresent() {
     $remoteArgs= @("-v", "--verbose", "--debug")
     $remoteIndex= $this.GetIndexOfFirstOf($remoteArgs)
@@ -279,8 +313,9 @@ class Props {
     $data = [System.IO.File]::ReadAllLines($filePath)
     foreach ($line in $data) {
       if ($line -match "^$propertyName=") {
-        $value = $line.Split('=')[1]
-        return $value.Trim()
+        $keyLength = $propertyName.Length + 1
+        $value = $line.Substring($keyLength)
+        return $value
       }
     }
     return $null
@@ -343,7 +378,7 @@ class JekaDistrib {
     $this.cacheDir = $cacheDir
   }
 
-  [string] GetDir() {
+  [string] GetBinDir() {
     $specificLocation = $this.props.GetValue("jeka.distrib.location")
     if ($specificLocation -ne '') {
       return $specificLocation
@@ -366,18 +401,18 @@ class JekaDistrib {
 
     $distDir = $this.cacheDir + "\distributions\" + $jekaVersion
     if ( [System.IO.Directory]::Exists($distDir)) {
-      return $distDir
+      return "$distDir\bin"
     }
 
     $distRepo = $this.props.GetValueOrDefault("jeka.distrib.repo", "https://repo.maven.apache.org/maven2")
     $url = "$distRepo/dev/jeka/jeka-core/$jekaVersion/jeka-core-$jekaVersion-distrib.zip"
     $zipExtractor = [ZipExtractor]::new($url, $distDir)
     $zipExtractor.Extract()
-    return $distDir
+    return "$distDir\bin"
   }
 
   [string] GetJar() {
-    return $this.GetDir() + "\dev.jeka.jeka-core.jar"
+    return $this.GetBinDir() + "\dev.jeka.jeka-core.jar"
   }
 
 }
@@ -465,7 +500,8 @@ function ExecJekaEngine {
     [string]$cacheDir,
     [Props]$props,
     [string]$javaCmd,
-    [array]$cmdLineArgs
+    [array]$cmdLineArgs,
+    [Parameter(Mandatory=$false)][bool]$stderr = $false
   )
 
   $jekaDistrib = [JekaDistrib]::new($props, $cacheDir)
@@ -498,17 +534,20 @@ function ExecProg {
 
 function Main {
   param(
-    [array]$arguments,
-    [bool]$allowReenter
+    [array]$arguments
   )
 
-  $argLine = $arguments -join ' '
+  #$argLine = $arguments -join '|'
+  #MessageInfo "Raw arguments |$argLine|"
   $jekaUserHome = Get-JekaUserHome
   $cacheDir = Get-CacheDir($jekaUserHome)
   $globalPropFile = $jekaUserHome + "\global.properties"
 
   # Get interpolated cmdLine, while ignoring Base dir
   $rawCmdLineArgs = [CmdLineArgs]::new($arguments)
+  if ($rawCmdLineArgs.IsQuietFlagPresent()) {
+    $global:QuietFlag = $true
+  }
   $rawProps = [Props]::new($rawCmdLineArgs, $PWD.Path, $globalPropFile)
   $cmdLineArgs = $rawProps.InterpolatedCmdLine()
 
@@ -542,7 +581,8 @@ function Main {
 
     # No executable or Jar found : launch a build
     $buildCmd = $props.GetValue("jeka.program.build")
-    if ($buildCmd -eq '') {
+    MessageInfo "jeka.program.build=$buildCmd"
+    if (!$buildCmd) {
       $srcDir = $baseDir + "\src"
       if ([System.IO.Directory]::Exists($srcDir)) {
         $buildCmd = "project: pack -Djeka.skip.tests=true"
@@ -574,4 +614,4 @@ function Main {
 }
 
 $ErrorActionPreference = "Stop"
-Main -arguments $args -allowReenter $true
+Main -arguments $args

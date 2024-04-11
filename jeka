@@ -1,5 +1,21 @@
 #!/bin/bash
 #
+# Copyright 2014-2024  the original author or authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#       https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+#
 # Script for launching JeKa tool.
 #
 # Authors: Jerome Angibaud, Patrick Santana
@@ -7,22 +23,19 @@
 # Rules for selecting a JDK :
 # - if JEKA_JDK_HOME env var is specified, select it
 # - if a jeka.java.version property is specified
-#     - if a jeka.jdk.[version] property is specified, select it.
-#     - else, look in cache or download the proper JƒDK
+#     - if a jeka.jdk.[version] property is specified, select the specified path.
+#     - else, look in cache or download the proper JDK
 # - else
 #   - if JAVA_HOME env var is specified, select it
-#   - else, look in cache and download default version (21)
-#
+#   - else, look in cache and download default version (temurin 21)
 #
 # Rules for reading a property (said "my.prop") :
-# - if a command line args contains "-Dmy.prop=xxx", returns 'xxx'
-# - if an env var 'my.prop' exists, returns this value
+# - if a command line argument contains "-Dmy.prop=xxx", returns 'xxx'
+# - if an OS environment variable 'my.prop' exists, returns this value
 # - if property is defined in $BASE_DIR/jeka.properties, returns this value
 # - look recursively in $BASE_DIR/../jeka.properties. Stop at first folder ancestor not having a jeka.properties file
 # - look in JEKA_USER_HOME/global.properties
 #
-
-# Execution time has been benchmarked to 100 ms excluding JAVA command invoke.
 
 set -e
 
@@ -40,6 +53,7 @@ declare JEKA_USER_HOME
 declare GLOBAL_PROP_FILE
 declare BASE_DIR  # To find BASE_DIR/jeka/local.properties, BASE_DIR/jeka/def, ...
 declare CURRENT_SCRIPT_DIR
+declare -i PROGRAM_OPTION_INDEX
 CURRENT_SCRIPT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
 # Global variables are preferred over passing all arguments
@@ -56,8 +70,6 @@ declare SHOULD_LOG_DOWNLOAD # we should not log anything when on the green path,
 declare LOG_DEBUG # DEBUG
 declare DRY_RUN  # Debugging purpose
 declare DEFAULT_BASE_DIR="."
-
-
 
 
 #######################################
@@ -109,7 +121,18 @@ substring_after_hash() {
     fi
 }
 
+array_contains() {
+    local search=$1; shift
+    local array=("$@")
 
+    for element in "${array[@]}"; do
+        if [[ $element == $search ]]; then
+            echo "true"
+            return 0 # Element found, return success
+        fi
+    done
+    echo "false"
+}
 
 
 #######################################
@@ -566,7 +589,20 @@ compute_BASE_DIR() {
   local next_index=$((index + 1))
   local remote_arg=${array[$next_index]}
   local need_update="false"
-  if [[ "$option" == *u* ]]; then
+
+  # check if cmdline contains -u or --update options, prior the -parameters
+  local -a prior_program_option_array
+  if [[ $PROGRAM_OPTION_INDEX == -1 ]]; then
+    prior_program_option_array=("${INTERPOLATED_ARGS[@]}")
+  else
+    prior_program_option_array=("${INTERPOLATED_ARGS[@]:0:PROGRAM_OPTION_INDEX}")
+  fi
+  local contains_u
+  contains_u=$(array_contains "-u" "${prior_program_option_array[@]}")
+  local contains_update
+  contains_update=$(array_contains "--update" "${prior_program_option_array[@]}")
+
+  if [[ "$option" == *u* ]] || [[ $contains_u == "true" ]] || [[ $contains_update == "true" ]]; then
     need_update="true"
   fi
   compute_base_dir_from_resolved_remote_arg "$remote_arg" "$need_update"
@@ -605,7 +641,12 @@ compute_JEKA_DIST_DIR() {
 
       else
         # select download repo
-        local jeka_repo="https://repo.maven.apache.org/maven2"
+        local jeka_repo
+        if [[ "$jeka_version" == *"-SNAPSHOT" ]]; then
+          jeka_repo="https://oss.sonatype.org/content/repositories/snapshots"
+        else
+          jeka_repo="https://repo.maven.apache.org/maven2"
+        fi
         local distrib_repo
         distrib_repo=$(get_prop_value_from_base_dir "$base_dir" "jeka.distrib.repo")
         [ -n "$distrib_repo" ] && jeka_repo=$distrib_repo
@@ -628,12 +669,13 @@ compute_JEKA_CLASSPATH() {
     return 0
   fi
   local dist_dir=$1
+  local bin_dir="$dist_dir"
 
   # If no distrib dir is specified (no jeka.version specified), we look first
   # for jeka-core.jar presence in the same dir of the current script
   if [ -z "$dist_dir" ]; then  ## No jeka.version is specified, should find the local one
     if [ -f "$CURRENT_SCRIPT_DIR/$JEKA_JAR_NAME" ]; then
-      dist_dir="$CURRENT_SCRIPT_DIR"
+      bin_dir="$CURRENT_SCRIPT_DIR"
     fi
     if [ -z "$dist_dir" ]; then
       msg "No JeKa distribution found from script location $CURRENT_SCRIPT_DIR."
@@ -656,7 +698,10 @@ compute_JEKA_CLASSPATH() {
        boot_dir_args="./jeka-boot/*:"
     fi
   fi
-  local jar_file="$dist_dir/$JEKA_JAR_NAME"
+  local jar_file="$dist_dir/bin/$JEKA_JAR_NAME"
+  if [ ! -f "$jar_file" ]; then
+    jar_file="$dist_dir/$JEKA_JAR_NAME"
+  fi
   if [ ! -f "$jar_file" ]; then
     msg "Cannot find JeKa jar file $jar_file."
     msg "Are you sure the JeKa distribution you use is properly packaged ?"
@@ -821,17 +866,16 @@ compute_JAVA_CMD() {
 #   JEKA_DIST_DIR (write)
 #   RETRY_AFTER_BUILD (read/write)
 #   INTERPOLATED_ARGS (read)
+#   PROGRAM_OPTION_INDEX (read)
 # Outputs:
 #   None. Exit anyway if program launch has been requested
 #######################################
 execute_program_if_requested() {
-  local -i prog_option_index
-  prog_option_index=$(find_index_of_program_option "${INTERPOLATED_ARGS[@]}")
-  if [[ $prog_option_index == -1 ]]; then
+  if [[ $PROGRAM_OPTION_INDEX == -1 ]]; then
     return 0
   fi
   local -i from_arg_index
-  from_arg_index=$((prog_option_index+1))
+  from_arg_index=$((PROGRAM_OPTION_INDEX+1))
   local program_args=("${INTERPOLATED_ARGS[@]:$from_arg_index}")
   execute_and_exit_native_if_present "${program_args[@]}"
   execute_and_exit_java_if_present "${program_args[@]}"
@@ -851,7 +895,11 @@ execute_program_if_requested() {
   local build_cmd
   build_cmd=$(get_prop_value_from_base_dir "$BASE_DIR" "jeka.program.build")
   if [[ -z "$build_cmd" ]]; then
-    build_cmd="project: pack -Djeka.skip.tests=true"
+    if [ -d "$BASE_DIR/src" ]; then
+      build_cmd="project: pack -Djeka.skip.tests=true"
+    else
+      build_cmd="base: pack -Djeka.skip.tests=true"
+    fi
   fi
   debug "Launch build with command : $build_cmd"
 
@@ -874,17 +922,17 @@ execute_program_if_requested() {
 # Outputs:
 #   Write to stdout
 #######################################
-find_index_of_program_option() {
+compute_PROGRAM_OPTION_INDEX() {
   local -i index=0
   local -a items=("$@")
   for item in "${items[@]}"; do
     if [[ "$item" == "-p" ]] || [[ "$item" == "--program" ]]; then
-      echo "$index"
+      PROGRAM_OPTION_INDEX="$index"
       return 0
     fi
     ((index++))
   done
-  echo -1
+  PROGRAM_OPTION_INDEX=-1
 }
 
 ######################################
@@ -995,6 +1043,7 @@ JEKA_USER_HOME=$(get_jeka_user_home)
 GLOBAL_PROP_FILE="$JEKA_USER_HOME/global.properties"
 
 compute_INTERPOLATED_ARGS "${CMD_LINE_ARGS[@]}"
+compute_PROGRAM_OPTION_INDEX "${INTERPOLATED_ARGS[@]}"
 compute_BASE_DIR "${INTERPOLATED_ARGS[@]}"
 
 execute_program_if_requested
