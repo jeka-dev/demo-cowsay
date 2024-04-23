@@ -79,12 +79,13 @@ jeka -r https://github.com/jeka-dev/demo-cowsay -p ::hi
 
 ## Use shorthand defined in global.properties
 
-By adding `jeka.cmd.cowsay=-r https://github.com/jeka-dev/demo-cowsay -p` to the *[USER HOME]/.jeka/global.properties* 
-we can reduce the necessary typing, to :
+By adding `jeka.cmd.cowsay=-r https://github.com/jeka-dev/demo-cowsay -p`
+
+to the *[USER HOME]/.jeka/global.properties* file, we can use a simpler typing :
 
 ```shell
 jeka ::cowsay ::hi
 ```
 
 > [!TIP]
-> You can see what shorthand is defined by executing `jeka : --help`
+> You can display which shorthands are defined, by executing `jeka : --help`
