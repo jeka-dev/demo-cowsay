@@ -1,12 +1,12 @@
 # Cowsay demo for JeKa
 
-Project forked from https://github.com/ricksbrown/cowsay/tree/master
-
 This repo demonstrates the capability of Jeka for executing Java applications from source code, hosted 
 in a remote repository.
 
 The application is a *cowsay* Java port, build with JeKa. 
-It consists in many Java source and resources files.
+
+It is forked from https://github.com/ricksbrown/cowsay/tree/master
+and consists in many Java source and resources files.
 
 ## Prerequisite 
 
