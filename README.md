@@ -22,7 +22,7 @@ jeka -r https://github.com/jeka-dev/demo-cowsay -p Hello JeKa
 ```
 
 Behind the scene, this :
-  - Clones the repo in [USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay
+  - Clones the repo in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay*
   - Downloads proper JDK (If needed)
   - Downloads proper JeKa version (If needed)
   - Builds the fat Jar silently (cause of --quiet option mentioned in [jeka.properties file](jeka.properties))
@@ -41,7 +41,16 @@ On the subsequent runs, this will run faster as only the last step will be execu
                 ||     ||
 ```
 
-## Execute in Docker image
+## Execute a specific version of the application
+
+You can specify a particular tag for cloning the application using the hash notation like this: : 
+
+```shell
+jeka -r https://github.com/jeka-dev/demo-cowsay#0.0.1 -p Hello JeKa
+```
+This Clones the repo from tag *0.0.1* in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay#0.0.1*
+
+## Execute in Docker
 You need to have a Docker client running on the host machine (Docker Desktop).
 
 First, build the Docker image
@@ -54,6 +63,17 @@ Then run the image
 jeka -r https://github.com/jeka-dev/demo-cowsay docker: run programArgs="Hello Docker" --quiet
 ```
 
+```
+ ____________
+< Hello Docker >
+ ------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+```
+
 ## Native image (experimental)
 
 Create an executable native image :
@@ -64,10 +84,30 @@ jeka -r https://github.com/jeka-dev/demo-cowsay nativeImg
 
 Now, run again :
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay -p -f dragon Hello Mates
+jeka -r https://github.com/jeka-dev/demo-cowsay -p -f dragon Hello Native
 ```
 The native image will be run directly in few milliseconds.
-
+```
+ _____________
+< Hello Native >
+ -------------
+      \                    / \  //\
+       \    |\___/|      /   \//  \\
+            /0  0  \__  /    //  | \ \
+           /     /  \/_/    //   |  \  \
+           @_^_@'/   \/_   //    |   \   \
+           //_^_/     \/_ //     |    \    \
+        ( //) |        \///      |     \     \
+      ( / /) _|_ /   )  //       |      \     _\
+    ( // /) '/,_ _ _/  ( ; -.    |    _ _\.-~        .-~~~^-.
+  (( / / )) ,-{        _      `-.|.-~-.           .~         `.
+ (( // / ))  '/\      /                 ~-. _ .-~      .-~^-.  \
+ (( /// ))      `.   {            }                   /      \  \
+  (( / ))     .----~-.\        \-'                 .~         \  `. \^-.
+             ///.----..>        \             _ -~             `.  ^-`  ^-_
+               ///-._ _ _ _ _ _ _}^ - - - - ~                     ~-- ,.-~
+                                                                  /.-~
+```
 
 ## Use shorthand defined in jeka.properties
 
