@@ -15,17 +15,17 @@ No need to have any JDK installed on your machine, JeKa manages it for you.
 
 ## Execute from anywhere
 
-Don't need to clone the repo by your own. Just execute from a terminal :
+You don't need to clone the repo by your own. Just execute the following command :
 
 ```shell
 jeka -r https://github.com/jeka-dev/demo-cowsay -p Hello JeKa
 ```
 
 Behind the scene, this :
-  - Clones the repo
+  - Clones the repo in [USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay
   - Downloads proper JDK (If needed)
   - Downloads proper JeKa version (If needed)
-  - Builds the fat Jar silently (cause of -q option)
+  - Builds the fat Jar silently (cause of --quiet option mentioned in [jeka.properties file](jeka.properties))
   - Executes the build Jar with the specified program arguments (next the '-p' option).
 
 On the subsequent runs, this will run faster as only the last step will be executed.
@@ -56,7 +56,7 @@ jeka -r https://github.com/jeka-dev/demo-cowsay docker: run programArgs="Hello D
 
 ## Native image (experimental)
 
-Create a native native executable :
+Create an executable native image :
 
 ```shell
 jeka -r https://github.com/jeka-dev/demo-cowsay nativeImg 
