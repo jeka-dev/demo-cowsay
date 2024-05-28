@@ -46,7 +46,7 @@ On the subsequent runs, this will run faster as only the last step will be execu
 You can specify a particular tag for cloning the application using the hash notation like this: : 
 
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay#0.0.1 -p Hello JeKa
+jeka -r https://github.com/jeka-dev/demo-cowsay#0.0.2 -p Hello JeKa
 ```
 This Clones the repo from tag *0.0.1* in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay#0.0.1*
 
