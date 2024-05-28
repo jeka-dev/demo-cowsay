@@ -10,7 +10,6 @@ commons-cli:commons-cli:1.4
 
 ==== RUNTIME ====
 
-
 ==== TEST ====
 org.junit.vintage:junit-vintage-engine:5.7.0
 junit:junit:4.13.1
