@@ -18,6 +18,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
+/**
+ * This build class is only here to implement experimental support for Native Image.
+ */
 class Build extends KBean {
 
     final JkProject project = load(ProjectKBean.class).project;
