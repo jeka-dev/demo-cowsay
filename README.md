@@ -79,7 +79,7 @@ jeka -r https://github.com/jeka-dev/demo-cowsay docker: run programArgs="Hello D
 Create an executable native image :
 
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay nativeImg 
+jeka -r https://github.com/jeka-dev/demo-cowsay native: build 
 ```
 
 Now, run again :

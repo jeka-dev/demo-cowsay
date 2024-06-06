@@ -1,5 +1,6 @@
 package com.github.ricksbrown.cowsay;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -202,8 +203,9 @@ public final class Cowsay {
 	 * @param args the command line arguments
 	 */
 	public static void main(final String[] args) {
+		String[] effectiveArgs = args.length == 0 ? new String[] {" "} : args;
 		CowsayCli.addCowthinkOption();
-		String cowsay = say(args);
+		String cowsay = say(effectiveArgs);
 		if (cowsay != null && cowsay.length() > 0) {
 			System.out.println(cowsay);
 		}
