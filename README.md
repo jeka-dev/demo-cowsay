@@ -1,34 +1,32 @@
-# Cowsay demo for JeKa
+# Cowsay Demo for JeKa
 
-This repo demonstrates the capability of Jeka for executing Java applications from source code, hosted 
-in a remote repository.
+This repository demonstrates the capability of JeKa for executing Java applications from source code hosted in a remote repository.
 
-The application is a [cowsay](https://en.wikipedia.org/wiki/Cowsay) Java port, build with JeKa. 
+The application is a [Cowsay](https://en.wikipedia.org/wiki/Cowsay) Java port, built with JeKa.
 
-The project is forked from https://github.com/ricksbrown/cowsay/tree/master
-and consists in many Java source and resources files.
+The project is forked from [this repository](https://github.com/ricksbrown/cowsay/tree/master) and consists of many Java source and resource files.
 
-## Prerequisite 
+## Prerequisites 
 
 Install JeKa.
-No need to have any JDK installed on your machine, JeKa manages it for you.
+No need to have any JDK installed on your machine; JeKa manages it for you.
 
-## Execute from anywhere
+## Execute from Anywhere
 
-You don't need to clone the repo by your own. Just execute the following command :
+You don't need to clone the repo yourself. Just execute the following command:
 
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay -p Hello JeKa
+jeka -r https://github.com/jeka-dev/demo-cowsay -p "Hello JeKa"
 ```
 
-Behind the scene, this :
+Behind the scenes, this:
   - Clones the repo in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay*
-  - Downloads proper JDK (If needed)
-  - Downloads proper JeKa version (If needed)
-  - Builds the fat Jar silently (cause of --quiet option mentioned in [jeka.properties file](jeka.properties))
-  - Executes the build Jar with the specified program arguments (next the '-p' option).
+  - Downloads the proper JDK (if needed)
+  - Downloads the proper JeKa version (if needed)
+  - Builds the fat jar silently (due to the `--quiet` option mentioned in the [jeka.properties file](jeka.properties))
+  - Executes the built jar with the specified program arguments (after the `-p` option).
 
-On the subsequent runs, this will run faster as only the last step will be executed.
+On subsequent runs, this will execute faster as only the last step will be performed.
 
 ```
  ____________
@@ -41,26 +39,30 @@ On the subsequent runs, this will run faster as only the last step will be execu
                 ||     ||
 ```
 
-## Execute a specific version of the application
+## Execute a Specific Version of the Application
 
-You can specify a particular tag for cloning the application using the hash notation like this: : 
+You can specify a particular tag for cloning the application using the hash notation like this:
 
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay#0.0.2 -p Hello JeKa
+jeka -r https://github.com/jeka-dev/demo-cowsay#0.0.2 -p "Hello JeKa"
 ```
-This Clones the repo from tag *0.0.1* in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay#0.0.1*
+
+This clones the repo from tag *0.0.2* in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay#0.0.2*.
 
 ## Execute in Docker
-You need to have a Docker client running on the host machine (Docker Desktop).
 
-First, build the Docker image
+You need to have a Docker client running on the host machine (e.g., Docker Desktop).
+
+First, build the Docker image:
+
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay docker: build
+jeka -r https://github.com/jeka-dev/demo-cowsay docker:build
 ```
 
-Then run the image
+Then run the image:
+
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay docker: run programArgs="Hello Docker" --quiet
+jeka -r https://github.com/jeka-dev/demo-cowsay docker:run programArgs="Hello Docker" --quiet
 ```
 
 ```
@@ -74,19 +76,22 @@ jeka -r https://github.com/jeka-dev/demo-cowsay docker: run programArgs="Hello D
                 ||     ||
 ```
 
-## Native image (experimental)
+## Native Image (Experimental)
 
-Create an executable native image :
+Create an executable native image:
 
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay native: build 
+jeka -r https://github.com/jeka-dev/demo-cowsay native:build 
 ```
 
-Now, run again :
+Now, run again:
+
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay -p -f dragon Hello Native
+jeka -r https://github.com/jeka-dev/demo-cowsay -p -f dragon "Hello Native"
 ```
-The native image will be run directly in few milliseconds.
+
+The native image will run directly in a few milliseconds.
+
 ```
  _____________
 < Hello Native >
@@ -109,23 +114,21 @@ The native image will be run directly in few milliseconds.
                                                                   /.-~
 ```
 
-## Use shorthand defined in jeka.properties
+## Use Shorthand Defined in jeka.properties
 
-We can use predefined program args using interpolation defined in [jeka.properties file](jeka.properties)
+We can use predefined program args using interpolation defined in the [jeka.properties file](jeka.properties).
 
 ```shell
 jeka -r https://github.com/jeka-dev/demo-cowsay -p ::hi
 ```
 
-## Use shorthand defined in global.properties
+## Use Shorthand Defined in global.properties
 
-By adding `jeka.cmd.cowsay=-r https://github.com/jeka-dev/demo-cowsay -p`
-
-to the *[USER HOME]/.jeka/global.properties* file, we can use a simpler typing :
+By adding `jeka.cmd.cowsay=-r https://github.com/jeka-dev/demo-cowsay -p` to the *[USER HOME]/.jeka/global.properties* file, we can use simpler typing:
 
 ```shell
 jeka ::cowsay ::hi
 ```
 
 > [!TIP]
-> You can display which shorthands are defined, by executing `jeka : --help`
+> You can display which shorthands are defined by executing `jeka : --help`.
