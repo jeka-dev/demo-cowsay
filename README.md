@@ -19,14 +19,14 @@ You don't need to clone the repo yourself. Just execute the following command:
 jeka -r https://github.com/jeka-dev/demo-cowsay -p "Hello JeKa"
 ```
 
-Behind the scenes, this:
-  - Clones the repo in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay*
-  - Downloads the proper JDK (if needed)
-  - Downloads the proper JeKa version (if needed)
-  - Builds the fat jar silently (due to the `--quiet` option mentioned in the [jeka.properties file](jeka.properties))
-  - Executes the built jar with the specified program arguments (after the `-p` option).
+Behind the scenes, the above command does :
+  - clone the repo in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay*
+  - download the proper JDK (if needed)
+  - download the proper JeKa version (if needed)
+  - build the fat jar silently (due to the `--quiet` option mentioned in the [jeka.properties file](jeka.properties))
+  - execute the built jar with the specified program arguments (after the `-p` option).
 
-On subsequent runs, this will execute faster as only the last step will be performed.
+On subsequent runs, the command executes faster as only the last step will be performed.
 
 ```
  ____________
