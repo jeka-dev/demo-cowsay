@@ -1,16 +1,20 @@
-# Cowsay Demo for JeKa
+# Cowsay CLI Application Demo for JeKa
 
-This repository demonstrates the capability of JeKa for executing Java applications from source code hosted in a remote repository.
+This repository demonstrates the capability of *JeKa* to execute Java applications from source code hosted in a remote Git repository.
+
+Remote applications can be executed as a Java or native app, directly on the host or in a Docker container. JeKa generates Docker images on the fly.
 
 The application is a [Cowsay](https://en.wikipedia.org/wiki/Cowsay) Java port, built with JeKa.
 
-The project is forked from [this repository](https://github.com/ricksbrown/cowsay/tree/master) and consists of many Java sources, resources and lib dependencies.
+The project is forked from [this repository](https://github.com/ricksbrown/cowsay/tree/master) and consists of various [Java sources](src/main/java), [resources](src/main/resources), 
+[library dependencies](dependencies.txt) and [build configurtion](jeka.properties).
 
 ## Prerequisites 
 
-- Jeka is installed on your machine (https://jeka-dev.github.io/jeka/installation/)
+- JeKa must be installed on your machine ([Installation guide](https://jeka-dev.github.io/jeka/installation/))
+- Optionally, a Docker client(such as Docker Desktop) should be installed to create and run Docker images.
 
-No JDK/JRE is required as JeKa will download the proper one for you.
+No JDK, JRE, or GraalVM is required, as JeKa will download the appropriate ones for you.
 
 > **Note:**
 >
@@ -28,6 +32,18 @@ You don't need to clone the repo yourself. Just execute the following command:
 ```shell
 jeka -r https://github.com/jeka-dev/demo-cowsay -p Hello JeKa
 ```
+
+The command should display:
+```
+ ____________
+< Hello JeKa >
+ ------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+```
 Command line explanation:
 - `-r` stands for the 'remote' option, meaning that a Git repository URL is expected as the next argument.
 - `https://github.com/jeka-dev/demo-cowsay` is the Git repository containing the Java application to build/run.
@@ -44,16 +60,7 @@ Behind the scenes, the above command does the following:
 
 On subsequent runs, the command executes faster as only the last step is performed.
 
-```
- ____________
-< Hello JeKa >
- ------------
-        \   ^__^
-         \  (oo)\_______
-            (__)\       )\/\
-                ||----w |
-                ||     ||
-```
+
 
 ## Execute a Specific Version of the Application
 
@@ -65,7 +72,7 @@ jeka -r https://github.com/jeka-dev/demo-cowsay#0.0.2 -p "Hello JeKa"
 
 This clones the repo from tag *0.0.2* in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay#0.0.2*.
 
-## Use shortcuts
+## Use Shortcuts
 
 To avoid retyping Git url of the application, you can leverage of the global substitution mechanism,
 by adding `jeka.cmd.cowsay=-r https://github.com/jeka-dev/demo-cowsay` to the *[USER HOME]/.jeka/global.properties* file.
@@ -74,17 +81,17 @@ by adding `jeka.cmd.cowsay=-r https://github.com/jeka-dev/demo-cowsay` to the *[
 
 Now, you can just execute :
 ```shell
-jeka ::cowsay "Hello JeKa"
+jeka ::cowsay -p "Hello JeKa"
 ```
 
 You can also combine with substitutions defined in the [jeka.properties file](jeka.properties).
 
 ```shell
-jeka ::cowsay ::hi
+jeka ::cowsay -p ::hi
 ```
-## Execute in Docker
+## Create JVM Docker Images
 
-You can directly create a proper Docker image of this Java application by executing :
+You can directly create an efficient Docker image of this Java application by executing :
 ```shell
 jeka -r https://github.com/jeka-dev/demo-cowsay docker: build
 ```
@@ -92,9 +99,9 @@ or
 ```shell
 jeka ::cosway docker: build
 ```
-This requires a Docker client installed on the host (*Docker Desktop* is fine).
+This requires a Docker client installed on the host.
 
-Then you can run the image, by executing:
+Then you can run the image by executing:
 ```shell
 docker run --rm demo-cowsay:latest "Hello Docker"
 ```
@@ -162,18 +169,25 @@ jeka -r https://github.com/jeka-dev/demo-cowsay native: staticLink=MUSL docker: 
 
 To execute the Docker native image, run :
 ```shell
-docker run --rm demo-cowsay:latest "Hello native docker"
+docker run --rm native-demo-cowsay:latest "Hello native docker"
 ```
 
 ## Command line help and documentation
 
-You can navigate help using `jeka --help` or `jeka xxx: --doc` commands.
+Commands documentations are available from the command line: use `jeka --help` or `jeka xxx: --doc` 
+to get a comprehensive list of available commands and options.
 
-Try:
+List the available KBeans (sets of commands/options):
+```shell
+jeka --doc
+```
+
+List the available commands and options provided by *docker* KBean:
 ```shell
 jeka docker: --doc
 ```
-or
+
+List the available commands and options provided by *native* KBean:
 ```shell
 jeka native: --doc
 ```
