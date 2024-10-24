@@ -18,7 +18,7 @@ No JDK, JRE, or GraalVM is required, as JeKa will download the appropriate ones 
 
 ## Execute from Anywhere
 
-You don't need to clone the repo yourself. Just execute the following command:
+You don't need to clone the repository yourself. Simply execute the following command:
 
 ```shell
 jeka -r https://github.com/jeka-dev/demo-cowsay -p Hello JeKa
