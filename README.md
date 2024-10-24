@@ -16,15 +16,6 @@ The project consists of various [Java sources](src/main/java), [resources](src/m
 
 No JDK, JRE, or GraalVM is required, as JeKa will download the appropriate ones for you.
 
-> **Note:**
->
-> We assume here that users are running/building the application *remotely*, meaning without needing to install or clone it themselves.
->
-> It is possible to run all subsequent commands locally by explicitly cloning this repository and executing
-> Jeka from the root directory, omitting the `-r https://github.com/jeka-dev/demo-cowsay` arguments. In this case, *JeKa* is no longer
-> required, as the boot scripts (*jeka* and *jeka.ps1*) are contained in the repository.
-
-
 ## Execute from Anywhere
 
 You don't need to clone the repo yourself. Just execute the following command:
