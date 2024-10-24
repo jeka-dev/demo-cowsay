@@ -6,8 +6,10 @@ Remote applications can be executed as a Java or native app, directly on the hos
 
 The application is a [Cowsay](https://en.wikipedia.org/wiki/Cowsay) Java port, built with JeKa.
 
-The project is forked from [this repository](https://github.com/ricksbrown/cowsay/tree/master) and consists of various [Java sources](src/main/java), [resources](src/main/resources), 
+The project consists of various [Java sources](src/main/java), [resources](src/main/resources), 
 [library dependencies](dependencies.txt) and [build configurtion](jeka.properties).
+
+*The Source code is forked from [the original cowsay port for Java](https://github.com/ricksbrown/cowsay/tree/master)*
 
 ## Prerequisites 
 
