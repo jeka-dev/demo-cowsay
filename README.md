@@ -1,13 +1,12 @@
-# Cowsay CLI Application Demo for JeKa
+# Cowsay CLI Demo with JeKa
 
-This repository demonstrates the capability of [JeKa](https://jeka.dev) to execute Java applications from source code hosted in a remote Git repository.
+This repository showcases [JeKa's](https://jeka.dev) ability to run Java applications directly from source code in a remote Git repository.
 
-Remote applications can be executed as a Java or native app, directly on the host or in a Docker container. JeKa generates Docker images on the fly.
+With JeKa, remote apps can run as Java or native executables, either on the host or within a Docker container. JeKa can also generate Docker images dynamically.
 
-The application is a [forked](https://github.com/ricksbrown/cowsay/tree/master) [Cowsay](https://en.wikipedia.org/wiki/Cowsay) Java port, built with JeKa.
+The demo app is a [Java port](https://github.com/ricksbrown/cowsay/tree/master) of [Cowsay](https://en.wikipedia.org/wiki/Cowsay), built with JeKa.
 
-The project consists of various [Java sources](src/main/java), [resources](src/main/resources), 
-[library dependencies](dependencies.txt) and [build configurtion](jeka.properties).
+The project includes [Java sources](src/main/java), [resources](src/main/resources), [library dependencies](dependencies.txt), and [build configuration](jeka.properties).
 
 ## Prerequisites 
 
