@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/cowjar-extra/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cowjar-extra/target" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cowjar-js/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cowjar-js/target" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cowjar-off/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cowjar-off/target" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cowjar/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cowjar/target" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cowsay/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cowsay/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
+  </component>
+</project>
