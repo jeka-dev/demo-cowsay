@@ -81,7 +81,7 @@ jeka -r https://github.com/jeka-dev/demo-cowsay docker:run programArgs="Hello Do
 Create an executable native image:
 
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay native:build 
+jeka -r https://github.com/jeka-dev/demo-cowsay native: compile 
 ```
 
 Now, run again:
@@ -127,7 +127,7 @@ jeka -r https://github.com/jeka-dev/demo-cowsay -p ::hi
 By adding `jeka.cmd.cowsay=-r https://github.com/jeka-dev/demo-cowsay -p` to the *[USER HOME]/.jeka/global.properties* file, we can use simpler typing:
 
 ```shell
-jeka ::cowsay ::hi
+jeka ::cowsay
 ```
 
 > [!TIP]

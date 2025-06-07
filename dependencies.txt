@@ -1,9 +1,8 @@
-==== COMPILE ====
+[compile]
 org.apache.commons:commons-lang3:3.3.2
 commons-cli:commons-cli:1.4
 
-==== TEST ====
-org.junit.vintage:junit-vintage-engine:5.7.0
-junit:junit:4.13.1
+[test]
+org.junit.vintage:junit-vintage-engine:5.13.1
 commons-io:commons-io:2.7
 
