@@ -44,7 +44,7 @@ On subsequent runs, this will execute faster as only the last step will be perfo
 You can specify a particular tag for cloning the application using the hash notation like this:
 
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay#0.0.2 -p "Hello JeKa"
+jeka -r https://github.com/jeka-dev/demo-cowsay#0.0.8 -p "Hello JeKa"
 ```
 
 This clones the repo from tag *0.0.2* in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay#0.0.2*.
@@ -56,13 +56,13 @@ You need to have a Docker client running on the host machine (e.g., Docker Deskt
 First, build the Docker image:
 
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay docker:build
+jeka -r https://github.com/jeka-dev/demo-cowsay docker: build
 ```
 
 Then run the image:
 
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay docker:run programArgs="Hello Docker" --quiet
+docker run --rm github.com_jeka-dev_demo-cowsay:latest "Hello Docker"
 ```
 
 ```
@@ -76,9 +76,9 @@ jeka -r https://github.com/jeka-dev/demo-cowsay docker:run programArgs="Hello Do
                 ||     ||
 ```
 
-## Native Image (Experimental)
+## Native Executable
 
-Create an executable native image:
+Create an executable native executable:
 
 ```shell
 jeka -r https://github.com/jeka-dev/demo-cowsay native: compile 
@@ -90,7 +90,7 @@ Now, run again:
 jeka -r https://github.com/jeka-dev/demo-cowsay -p -f dragon "Hello Native"
 ```
 
-The native image will run directly in a few milliseconds.
+The native executable will run directly in a few milliseconds.
 
 ```
  _____________
@@ -131,4 +131,4 @@ jeka ::cowsay
 ```
 
 > [!TIP]
-> You can display which shorthands are defined by executing `jeka : --help`.
+> You can display which shorthands are defined by executing `jeka --doc`.
