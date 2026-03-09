@@ -51,7 +51,7 @@ You can specify a particular tag for cloning the application using the hash nota
 jeka -r https://github.com/jeka-dev/demo-cowsay#0.0.8 -p "Hello JeKa"
 ```
 
-This clones the repo from tag *0.0.2* in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay#0.0.2*.
+This clones the repo from tag *0.0.8* in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay#0.0.8*.
 
 ## Execute in Docker
 
@@ -82,7 +82,7 @@ docker run --rm github.com_jeka-dev_demo-cowsay:latest "Hello Docker"
 
 ## Native Executable
 
-Create an executable native executable:
+Create a native executable:
 
 ```shell
 jeka -r https://github.com/jeka-dev/demo-cowsay native: compile 
@@ -120,7 +120,7 @@ The native executable will run directly in a few milliseconds.
 
 ## Use Shorthand Defined in jeka.properties
 
-We can use predefined program args using interpolation defined in the [jeka.properties file](jeka.properties).
+We can use predefined program arguments using the interpolation defined in the [jeka.properties file](jeka.properties).
 
 ```shell
 jeka -r https://github.com/jeka-dev/demo-cowsay -p ::hi
@@ -128,7 +128,7 @@ jeka -r https://github.com/jeka-dev/demo-cowsay -p ::hi
 
 ## Use Shorthand Defined in global.properties
 
-By adding `jeka.cmd.cowsay=-r https://github.com/jeka-dev/demo-cowsay -p` to the *[USER HOME]/.jeka/global.properties* file, we can use simpler typing:
+By adding `jeka.cmd.cowsay=-r https://github.com/jeka-dev/demo-cowsay -p` to the *[USER HOME]/.jeka/global.properties* file, we can use a simpler command:
 
 ```shell
 jeka ::cowsay
