@@ -11,11 +11,9 @@ The project is forked from [this repository](https://github.com/ricksbrown/cowsa
 Install JeKa.
 No need to have any JDK installed on your machine; JeKa manages it for you.
 
-### Install
+## Remote Execution
 
-
-
-## Execute from Anywhere without Installing
+### Execute from Anywhere without Installing
 
 You don't need to clone the repo yourself. Just execute the following command:
 
@@ -43,7 +41,7 @@ On subsequent runs, this will execute faster as only the last step will be perfo
                 ||     ||
 ```
 
-## Execute a Specific Version of the Application
+### Execute a Specific Version
 
 You can specify a particular tag for cloning the application using the hash notation like this:
 
@@ -53,7 +51,9 @@ jeka -r https://github.com/jeka-dev/demo-cowsay#0.0.8 -p "Hello JeKa"
 
 This clones the repo from tag *0.0.8* in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay#0.0.8*.
 
-## Execute in Docker
+## Build and Package
+
+### Execute in Docker
 
 You need to have a Docker client running on the host machine (e.g., Docker Desktop).
 
@@ -80,7 +80,7 @@ docker run --rm github.com_jeka-dev_demo-cowsay:latest "Hello Docker"
                 ||     ||
 ```
 
-## Native Executable
+### Native Executable
 
 Create a native executable:
 
@@ -118,7 +118,23 @@ The native executable will run directly in a few milliseconds.
                                                                   /.-~
 ```
 
-## Use Shorthand Defined in jeka.properties
+## Installation and Shorthands
+
+### Installation
+
+You can install the application to your machine as a command-line tool.
+
+Install as command-line:
+```shell
+jeka app: install repo=cowsay@demo
+```
+
+For faster startup, install the native version:
+```shell
+jeka app: install repo=cowsay@demo runtime=NATIVE
+```
+
+### Use Shorthand Defined in jeka.properties
 
 We can use predefined program arguments using the interpolation defined in the [jeka.properties file](jeka.properties).
 
@@ -126,7 +142,7 @@ We can use predefined program arguments using the interpolation defined in the [
 jeka -r https://github.com/jeka-dev/demo-cowsay -p ::hi
 ```
 
-## Use Shorthand Defined in global.properties
+### Use Shorthand Defined in global.properties
 
 By adding `jeka.cmd.cowsay=-r https://github.com/jeka-dev/demo-cowsay -p` to the *[USER HOME]/.jeka/global.properties* file, we can use a simpler command:
 
