@@ -11,7 +11,11 @@ The project is forked from [this repository](https://github.com/ricksbrown/cowsa
 Install JeKa.
 No need to have any JDK installed on your machine; JeKa manages it for you.
 
-## Execute from Anywhere
+### Install
+
+
+
+## Execute from Anywhere without Installing
 
 You don't need to clone the repo yourself. Just execute the following command:
 
