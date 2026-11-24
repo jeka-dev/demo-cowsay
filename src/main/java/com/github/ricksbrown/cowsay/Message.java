@@ -66,7 +66,8 @@ public class Message {
 		String newLine = System.getProperty("line.separator");
 		String[] lines = message.split(newLine);
 		for (String line : lines) {
-			result.add(WordUtils.wrap(line, wrap, null, true));
+			// WordUtils.wrap drops the leading space, even for lines that don't need to be wrapped.
+			result.add(line.length() <= wrap ? line : WordUtils.wrap(line, wrap, null, true));
 		}
 		return StringUtils.join(result, newLine);
 	}
