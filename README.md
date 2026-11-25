@@ -1,34 +1,25 @@
 # Cowsay Demo for JeKa
 
-This repository demonstrates the capability of JeKa for executing Java applications from source code hosted in a remote repository.
+This repository shows how JeKa runs, installs and packages a Java application directly from its Git repository.
+It demonstrates remote execution (`-r`, `-p`), Docker images, native executables, application installation and
+command shorthands.
 
-The application is a [Cowsay](https://en.wikipedia.org/wiki/Cowsay) Java port, built with JeKa.
+The application is a [Cowsay](https://en.wikipedia.org/wiki/Cowsay) Java port, forked from
+[ricksbrown/cowsay](https://github.com/ricksbrown/cowsay/tree/master).
 
-The project is forked from [this repository](https://github.com/ricksbrown/cowsay/tree/master) and consists of many Java source and resource files.
+## Prerequisites
 
-## Prerequisites 
+- [JeKa](https://jeka-dev.github.io/jeka/installation/), to run commands starting with `jeka`. Commands starting with `./jeka` don't need it.
+- Git and network access.
+- Docker, only to [build a Docker image](#build-a-docker-image).
 
-Install JeKa.
-No need to have any JDK installed on your machine; JeKa manages it for you.
+You don't need a JDK: JeKa downloads it.
 
-## Remote Execution
-
-### Execute from Anywhere without Installing
-
-You don't need to clone the repo yourself. Just execute the following command:
+## Run It
 
 ```shell
 jeka -r https://github.com/jeka-dev/demo-cowsay -p "Hello JeKa"
 ```
-
-Behind the scenes, this:
-  - Clones the repo in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay*
-  - Downloads the proper JDK (if needed)
-  - Downloads the proper JeKa version (if needed)
-  - Builds the fat jar silently (due to the `--quiet` option mentioned in the [jeka.properties file](jeka.properties))
-  - Executes the built jar with the specified program arguments (after the `-p` option).
-
-On subsequent runs, this will execute faster as only the last step will be performed.
 
 ```
  ____________
@@ -41,65 +32,73 @@ On subsequent runs, this will execute faster as only the last step will be perfo
                 ||     ||
 ```
 
-### Execute a Specific Version
+On the first run, JeKa:
 
-You can specify a particular tag for cloning the application using the hash notation like this:
+  - Clones the repo in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay*
+  - Downloads the required JDK and JeKa versions, if they are missing
+  - Builds the fat jar, without running the tests
+  - Runs the jar with the arguments following `-p`
+
+Next runs only execute the last step. Add `-u` to get the last commit and rebuild:
 
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay#0.0.8 -p "Hello JeKa"
+jeka -ru https://github.com/jeka-dev/demo-cowsay -p "Hello JeKa"
 ```
 
-This clones the repo from tag *0.0.8* in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay#0.0.8*.
+### Run a Specific Version
 
-## Build and Package
+Add a tag name after `#`:
 
-### Execute in Docker
+```shell
+jeka -r "https://github.com/jeka-dev/demo-cowsay#0.0.10" -p "Hello JeKa"
+```
 
-You need to have a Docker client running on the host machine (e.g., Docker Desktop).
+Each tag has its own clone, here in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay#0.0.10*.
 
-First, build the Docker image:
+### Run from a Local Clone
+
+```shell
+git clone https://github.com/jeka-dev/demo-cowsay
+cd demo-cowsay
+./jeka -p "Hello JeKa"
+```
+
+Run the tests and create the jar in *jeka-output*:
+
+```shell
+./jeka project: test pack
+```
+
+## Build a Docker Image
 
 ```shell
 jeka -r https://github.com/jeka-dev/demo-cowsay docker: build
 ```
 
-Then run the image:
+Then run it:
 
 ```shell
 docker run --rm github.com_jeka-dev_demo-cowsay:latest "Hello Docker"
 ```
 
-```
- ____________
-< Hello Docker >
- ------------
-        \   ^__^
-         \  (oo)\_______
-            (__)\       )\/\
-                ||----w |
-                ||     ||
-```
+## Build a Native Executable
 
-### Native Executable
-
-Create a native executable:
+This takes a few minutes. JeKa downloads GraalVM if needed.
 
 ```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay native: compile 
+jeka -r https://github.com/jeka-dev/demo-cowsay native: compile
 ```
 
-Now, run again:
+Now the same run command uses the native executable, which starts in a few milliseconds:
 
 ```shell
 jeka -r https://github.com/jeka-dev/demo-cowsay -p -f dragon "Hello Native"
 ```
 
-The native executable will run directly in a few milliseconds.
-
 ```
- _____________
+ ______________
 < Hello Native >
- -------------
+ --------------
       \                    / \  //\
        \    |\___/|      /   \//  \\
             /0  0  \__  /    //  | \ \
@@ -118,37 +117,58 @@ The native executable will run directly in a few milliseconds.
                                                                   /.-~
 ```
 
-## Installation and Shorthands
+## Install as a Command
 
-### Installation
+`cowsay@demo` refers to this repository in the JeKa *demo* catalog. JeKa asks which version to install.
 
-You can install the application to your machine as a command-line tool.
-
-Install as command-line:
 ```shell
 jeka app: install repo=cowsay@demo
 ```
 
-For faster startup, install the native version:
+Then, run:
+
 ```shell
+cowsay "Hello JeKa"
+```
+
+For a faster startup, install the native version instead. Remove the previous one first:
+
+```shell
+jeka app: uninstall name=cowsay
 jeka app: install repo=cowsay@demo runtime=NATIVE
 ```
 
-### Use Shorthand Defined in jeka.properties
+## Use Shorthands
 
-We can use predefined program arguments using the interpolation defined in the [jeka.properties file](jeka.properties).
+A shorthand `jeka.cmd.xxx` replaces `::xxx` in the command line. It is read from the current directory or from the global
+properties, not from the remote repository.
 
-```shell
-jeka -r https://github.com/jeka-dev/demo-cowsay -p ::hi
-```
-
-### Use Shorthand Defined in global.properties
-
-By adding `jeka.cmd.cowsay=-r https://github.com/jeka-dev/demo-cowsay -p` to the *[USER HOME]/.jeka/global.properties* file, we can use a simpler command:
+From a local clone, use `hi`, defined in [jeka.properties](jeka.properties):
 
 ```shell
-jeka ::cowsay
+./jeka -p ::hi
 ```
 
-> [!TIP]
-> You can display which shorthands are defined by executing `jeka --doc`.
+To run cowsay from any directory, add this line to *[USER HOME]/.jeka/global.properties*:
+
+```properties
+jeka.cmd.cowsay=-r https://github.com/jeka-dev/demo-cowsay -p
+```
+
+Then, execute:
+
+```shell
+jeka ::cowsay "Hello JeKa"
+```
+
+## How It Works
+
+- [jeka.properties](jeka.properties): JeKa and Java versions, fat jar with its main class detected, resources included in the native executable, and shorthand.
+- [jeka.project.deps](jeka.project.deps): compile and test dependencies.
+- `jeka` and `jeka.ps1`: scripts that run JeKa without installing it.
+
+## Learn More
+
+- [Source-runnable applications](https://jeka-dev.github.io/jeka/tutorials/source-runnable-apps/)
+- [App](https://jeka-dev.github.io/jeka/reference/kbeans-app/), [Docker](https://jeka-dev.github.io/jeka/reference/kbeans-docker/) and [Native](https://jeka-dev.github.io/jeka/reference/kbeans-native/) KBeans
+- [Properties](https://jeka-dev.github.io/jeka/reference/properties/)
