@@ -50,10 +50,10 @@ jeka -ru https://github.com/jeka-dev/demo-cowsay -p "Hello JeKa"
 Add a tag name after `#`:
 
 ```shell
-jeka -r "https://github.com/jeka-dev/demo-cowsay#0.0.10" -p "Hello JeKa"
+jeka -r "https://github.com/jeka-dev/demo-cowsay#0.11.69" -p "Hello JeKa"
 ```
 
-Each tag has its own clone, here in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay#0.0.10*.
+Each tag has its own clone, here in *[USER HOME]/.jeka/cache/git/github.com_jeka-dev_demo-cowsay#0.11.69*.
 
 ### Run from a Local Clone
 
