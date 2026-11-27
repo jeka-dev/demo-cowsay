@@ -211,15 +211,27 @@ class CmdLineArgs {
   }
 
   [bool] IsQuietFlagPresent() {
-    $remoteArgs= @("-q", "--quiet")
-    $remoteIndex= $this.GetIndexOfFirstOf($remoteArgs)
-    return ($remoteIndex -ne -1)
+    return $this.IsFlagBeforeProgram(@("-q", "--quiet"))
   }
 
   [bool] IsVerboseFlagPresent() {
-    $remoteArgs= @("-v", "--verbose", "--debug")
-    $remoteIndex= $this.GetIndexOfFirstOf($remoteArgs)
-    return ($remoteIndex -ne -1)
+    return $this.IsFlagBeforeProgram(@("-v", "--verbose", "--debug"))
+  }
+
+  # Arguments after '-p' belong to the program
+  [bool] IsFlagBeforeProgram([array]$flags) {
+    $flagIndex = -1
+    foreach ($flag in $flags) {
+      $index = $this.args.IndexOf($flag)
+      if (($index -ne -1) -and (($flagIndex -eq -1) -or ($index -lt $flagIndex))) {
+        $flagIndex = $index
+      }
+    }
+    if ($flagIndex -eq -1) {
+      return $false
+    }
+    $programIndex = $this.GetProgramArgIndex()
+    return ($programIndex -eq -1) -or ($flagIndex -lt $programIndex)
   }
 
   [bool] IsProgramFlagPresent() {
@@ -228,9 +240,7 @@ class CmdLineArgs {
   }
 
   [bool] IsCleanFlagPresent() {
-    $remoteArgs= @("-c", "--clean")
-    $remoteIndex= $this.GetIndexOfFirstOf($remoteArgs)
-    return ($remoteIndex -ne -1)
+    return $this.IsFlagBeforeProgram(@("-c", "--clean"))
   }
 
   [array] FilterOutSysProp() {
@@ -329,10 +339,38 @@ class Props {
     return [CmdLineArgs]::new($result)
   }
 
+  # Splits a line in words, as the JeKa engine does (JkUtilsString.parseCommandline): spaces separate words,
+  # unless they are in single or double quotes, which are removed. Nothing else is interpreted.
   static [array] ParseCommandLine([string]$cmdLine) {
-    $pattern = '(""[^""]*""|[^ ]*)'
-    $regex = New-Object Text.RegularExpressions.Regex $pattern
-    return $regex.Matches($cmdLine) | ForEach-Object { $_.Value.Trim('"') } | Where-Object { $_ -ne "" }
+    $words = New-Object System.Collections.Generic.List[string]
+    $word = New-Object System.Text.StringBuilder
+    $quote = [char]0
+    $hasWord = $false
+    foreach ($c in $cmdLine.ToCharArray()) {
+      if ($quote -ne [char]0) {
+        if ($c -eq $quote) {
+          $quote = [char]0
+        } else {
+          [void]$word.Append($c)
+        }
+      } elseif ($c -eq [char]"'" -or $c -eq [char]'"') {
+        $quote = $c
+        $hasWord = $true
+      } elseif ($c -eq [char]' ') {
+        if ($hasWord) {
+          $words.Add($word.ToString())
+          [void]$word.Clear()
+          $hasWord = $false
+        }
+      } else {
+        [void]$word.Append($c)
+        $hasWord = $true
+      }
+    }
+    if ($hasWord) {
+      $words.Add($word.ToString())
+    }
+    return $words.ToArray()
   }
 
   static [string] GetValueFromFile([string]$filePath, [string]$propertyName) {
@@ -504,6 +542,12 @@ class JekaDistrib {
 
     $distRepo = $this.props.GetValueOrDefault("jeka.repos.download", "https://repo.maven.apache.org/maven2")
     $distRepo = $distRepo.Split(',')[0].Trim()
+
+    # A repository specific to the JeKa distribution prevails
+    $specificDistRepo = $this.props.GetValue("jeka.distrib.repo")
+    if (![String]::IsNullOrWhiteSpace($specificDistRepo)) {
+      $distRepo = $specificDistRepo.Trim()
+    }
     $url = "$distRepo/dev/jeka/jeka-core/$jekaVersion/jeka-core-$jekaVersion-distrib.zip"
     $zipExtractor = [ZipExtractor]::new($url, $distDir)
 
@@ -584,6 +628,99 @@ class ZipExtractor {
   }
 }
 
+# Keep in sync with SecurityChecker.java
+class TrustedUrl {
+
+  # Returns the git url as [host]/[path], without protocol, user info and tag.
+  static [string] Normalize([string]$gitUrl) {
+    $u = ($gitUrl.Trim() -split '#', 2)[0]
+    $protocolIndex = $u.IndexOf('://')
+    if ($protocolIndex -ge 0) {
+      $u = $u.Substring($protocolIndex + 3)
+    }
+    $slashIndex = $u.IndexOf('/')
+    $authority = $u
+    $path = ''
+    if ($slashIndex -ge 0) {
+      $authority = $u.Substring(0, $slashIndex)
+      $path = $u.Substring($slashIndex)
+    }
+    $authority = $authority.Substring($authority.LastIndexOf('@') + 1)
+
+    # 'host:owner/repo' notation. The owner must be kept. A port number is part of the host.
+    $colonIndex = $authority.IndexOf(':')
+    if (($colonIndex -ge 0) -and ($authority.Substring($colonIndex + 1) -notmatch '^[0-9]+$')) {
+      $path = '/' + $authority.Substring($colonIndex + 1) + $path
+      if ($path.StartsWith('//')) {
+        $path = $path.Substring(1)
+      }
+      $authority = $authority.Substring(0, $colonIndex)
+    }
+    return $authority.ToLowerInvariant() + $path
+  }
+
+  # Matches on whole path segments
+  static [bool] IsTrustedBy([string]$gitUrl, [string]$trustedEntry) {
+    $u = [TrustedUrl]::Normalize($gitUrl).TrimEnd('/')
+    $entry = [TrustedUrl]::Normalize($trustedEntry).TrimEnd('/')
+    if ($entry -eq '') {
+      return $false
+    }
+    # Such urls can be resolved by Git to another location than the one they start with
+    if ($u.Contains('%') -or $u.Contains('\') -or $u.Contains('//') -or ($u -match '[\s\p{Cc}]')) {
+      return $false
+    }
+    if ("/$u/".Contains('/../') -or "/$u/".Contains('/./')) {
+      return $false
+    }
+    if (($u -replace '\.git$', '') -ceq ($entry -replace '\.git$', '')) {
+      return $true
+    }
+    return (-not $entry.EndsWith('.git')) -and $u.StartsWith("$entry/", [System.StringComparison]::Ordinal)
+  }
+
+  # Exits if the url is not trusted
+  static [void] Check([string]$gitUrl, [string]$globalPropFile) {
+    $isGit = [BaseDirResolver]::IsGitRemote($gitUrl)
+    if ( -not $isGit) {
+      return
+    }
+    $domain = [TrustedUrl]::Normalize($gitUrl)
+    if ([TrustedUrl]::IsTrustedBy($gitUrl, "github.com/jeka-dev/")) {
+      return
+    }
+    $propName = "jeka.app.url.trusted"
+    $trustedUrlProp = [Props]::GetValueFromFile($globalPropFile, $propName);
+    $trustedEnVar = $env:JEKA_APP_URL_TRUSTED
+    if ( -not [string]::IsNullOrEmpty($trustedEnVar)) {
+      $trustedUrlProp = $trustedEnVar
+    }
+    $trustedUrls = $trustedUrlProp.Trim() -split '\s+'
+    $found = $false
+    foreach ($prefix in $trustedUrls) {
+      if ([string]::IsNullOrWhiteSpace($prefix)) {
+        continue
+      }
+      if ([TrustedUrl]::IsTrustedBy($gitUrl, $prefix)) {
+        $found = $true
+        break
+      }
+    }
+    if ($found) {   # the url is part of the trusted domains
+      return
+    }
+    Write-Host
+    $response = Read-Host "Domain '$domain' is not trusted. Add to trusted? [N/y]"
+
+    if ($response -match '^[Yy]') {
+      [Props]::addOrAppendProperty($globalPropFile, $propName, $domain)
+    } else {
+      Write-Host "Execution aborted: '$domain' is not trusted."
+      exit 1
+    }
+  }
+}
+
 class ProgramExecutor {
   [string]$folder
   [array]$cmdLineArgs   # only args passed after -p
@@ -606,7 +743,6 @@ class ProgramExecutor {
   }
 
   [string] FindProg() {
-    $this.CheckTrustedUrl()
     $dir = $this.folder
     if (-not (Test-Path $dir)) {
       return $null
@@ -618,53 +754,35 @@ class ProgramExecutor {
     return $this.findFile(".jar")
   }
 
-  hidden CheckTrustedUrl() {
-    $isGit = [BaseDirResolver]::IsGitRemote($this.url)
-    if ( -not $isGit) {
-      return
-    }
-    $domain = [BaseDirResolver]::ProtocolLess($this.url)
-    if ($domain.StartsWith("github.com/jeka-dev/", [System.StringComparison]::OrdinalIgnoreCase)) {
-      return
-    }
-    $propName = "jeka.app.url.trusted"
-    $trustedUrlProp = [Props]::GetValueFromFile($this.globalPropFile, $propName);
-    $trustedEnVar = $env:JEKA_APP_URL_TRUSTED
-    if ( -not [string]::IsNullOrEmpty($trustedEnVar)) {
-      $trustedUrlProp = $trustedEnVar
-    }
-    $trustedUrls = $trustedUrlProp.Trim() -split '\s+'
-    $found = $false
-    foreach ($prefix in $trustedUrls) {
-      if ([string]::IsNullOrWhiteSpace($prefix)) {
-        continue
-      }
-      if ($domain.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-        $found = $true
-        break
-      }
-    }
-    if ($found) {   # the url is part of the trusted domains
-      return
-    }
-    Write-Host
-    $response = Read-Host "Domain '$domain' is not trusted. Add to trusted? [N/y]"
-
-    if ($response -match '^[Yy]') {
-      [Props]::addOrAppendProperty($this.globalPropFile, $propName, $domain)
-    } else {
-      Write-Host "Operation aborted by the user."
-      exit 0
-    }
-  }
-
   hidden [string] findFile([string]$extension) {
-    $files = Get-ChildItem -Path $this.folder -Filter "*$extension"
+    # Sources and javadoc jars, created when publishing, are not runnable
+    $files = Get-ChildItem -Path $this.folder -Filter "*$extension" |
+        Where-Object { $_.Name -notlike "*-sources.jar" -and $_.Name -notlike "*-javadoc.jar" }
     if ($files) {
       $firstFile = $files | Select-Object -First 1
       return $firstFile.FullName
     }
     return $null
+  }
+}
+
+# A jar left by 'project: pack' may have no Main-Class
+function IsRunnableJar([string]$jarFile) {
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $zip = [System.IO.Compression.ZipFile]::OpenRead($jarFile)
+  try {
+    $entry = $zip.GetEntry("META-INF/MANIFEST.MF")
+    if ($null -eq $entry) {
+      return $false
+    }
+    $reader = New-Object System.IO.StreamReader($entry.Open())
+    try {
+      return $reader.ReadToEnd() -match '(?im)^Main-Class:'
+    } finally {
+      $reader.Dispose()
+    }
+  } finally {
+    $zip.Dispose()
   }
 }
 
@@ -739,15 +857,21 @@ function Main {
   }
   $rawProps = [Props]::new($rawCmdLineArgs, $PWD.Path, $globalPropFile)
   $cmdLineArgs = $rawProps.InterpolatedCmdLine()
-  if (($cmdLineArgs.IsCleanFlagPresent()) -and (Test-Path .\jeka-output)) {
-    Remove-Item .\jeka-output -Recurse -Force -ErrorAction SilentlyContinue
-  }
 
   # Resolve basedir and interpolate cmdLine according props declared in base dir
   $remoteArg = $cmdLineArgs.GetRemoteBaseDirArg()
   $updateArg = $cmdLineArgs.IsUpdateFlagPresent()
   $baseDirResolver = [BaseDirResolver]::new($remoteArg, $cacheDir, $updateArg)
+
+  # Must be done before cloning, and whatever is executed : jeka-src code from the repo may run even without '-p' option
+  [TrustedUrl]::Check($remoteArg, $globalPropFile)
   $baseDir = $baseDirResolver.GetPath()
+
+  # The base dir may differ from the working dir, as with '-r'
+  $jekaOutputDir = Join-Path $baseDir "jeka-output"
+  if (($cmdLineArgs.IsCleanFlagPresent()) -and (Test-Path $jekaOutputDir)) {
+    Remove-Item $jekaOutputDir -Recurse -Force -ErrorAction SilentlyContinue
+  }
   $props = [Props]::new($cmdLineArgs, $baseDir, $globalPropFile)
   $cmdLineArgs = $props.InterpolatedCmdLine()
   $joinedArgs = $cmdLineArgs.args -join " "
@@ -770,6 +894,9 @@ function Main {
     $progJdk.SetForProg($true)
     $progJavaCmd = $progJdk.GetJavaCmd()
     if ($progFile -ne '') {
+      if ($progFile.EndsWith(".jar") -and -not (IsRunnableJar $progFile)) {
+        Exit-Error "$progFile has no Main-Class, so it cannot be run with -p. Use 'jeka -c -p ...' to rebuild it as a runnable jar."
+      }
       ExecProg -javaCmd $progJavaCmd -progFile $progFile -progDir $progDir -cmdLineArgs $progArgs
       exit $LASTEXITCODE
     }
